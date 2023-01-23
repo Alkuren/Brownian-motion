@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<!-- ver 1.3, © A. Kurenshvhikov, 2023 -->
+<head>
+<title>Броуновское движение</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+.button {
+  margin: 15px;
+  padding: 15px 25px;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  color: #fff;
+  background-color: #04AA6D;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 8px 8px #999;
+}
+
+.button:hover {color: yellow;}
+
+.button:active {
+  background-color: #3e8e41;
+  box-shadow: 5px 5px #666;
+  transform: translateY(4px);
+}
+
+.no_session {
+  margin: 15px 15px 15px 30px;
+  padding: 15px 25px;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  background-color: yellow; 
+  border: 1px;
+  border-radius: 15px;
+}
+
+.active_session {
+  disabled: false;
+<!--   margin: 15px 15px 15px 300px; -->
+  margin: 15px 15px 15px 30px; 
+  padding: 10px 10px;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  color: #fff;
+  background-color: blue; 
+  border: 1px;
+  border-radius: 15px;
+  box-shadow: 8px 8px #999;
+}
+
+.active_session:active {
+  box-shadow: 5px 5px #666;
+  transform: translateY(4px);
+}
+
+.demo {
+  margin: 15px;
+  padding: 15px 25px;
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  color: #fff;
+  background-color: #aaa;
+  border: solid 1px;
+  border-radius: 15px;
+  box-shadow: 8px 8px #999;
+}
+
+.demo:hover {color: yellow;}
+
+.demo:active {
+  background-color: #777;
+  box-shadow: 5px 5px #666;
+  transform: translateY(4px);
+}
+
+#transparent
+{
+ position: absolute; 
+ align: center; 
+ width: 800px; 
+ height: 600px; 
+ border:2px solid red; 
+ cursor: crosshair;
+}
+
+#bug
+{
+ position: absolute; 
+ display: none;
+}
+
+#tooltip
+{
+ position: absolute; 
+ display: none;
+}
+</style>
+
+</head>
+<body>
+<button id="b_camera" class="button">Включить камеру</button>
+<button id="b_video" class="button">Включить видео</button>
+<button id="b_demo" class="demo">Демо</button>
+<button disabled id="session" class="no_session">Кликни на выбранной частице,<br> чтобы начать новую серию</button>
+
+<div id= "transparent">
+ <div style="text-align: center;" id="logo"><img src="sirin.jpg"></div>
+  <div id="bug"></div>
+  <video id="video" width="800" height="600" autoplay muted style="display: none;">
+ </video>
+
+</div>
+ <div id= "tooltip"></div>
+<!--<button id="click-photo">Click Photo</button>
+ <canvas id="canvas" width="400" height="300"></canvas> -->
+
+
+</body>
+
+<script>
+var on_air=false;
+var video_on=false;
+var session_opened=false;
+var current_session_data;
+var start_session_time;
+var start_session_x;
+var start_session_y;
+var delimiter=";";
+var x0, y0, t0, demo_on=false;
+var t_demo, x_r,y_r, t_r, r_r;
+const delta=6;
+
+function showTooltip(evt, text) {
+  var tooltip = document.getElementById("tooltip");
+  tooltip.innerHTML = text;
+  tooltip.style.display = "block";
+  tooltip.style.left = evt.pageX + 10 + 'px';
+  tooltip.style.top = evt.pageY + 3 + 'px';
+  tooltip.style.fontSize = "10px";
+}
+
+function hideTooltip() {
+  var tooltip = document.getElementById("tooltip");
+  tooltip.style.display = "none";
+}
+
+var transparent = document.querySelector("#transparent");
+var camera_button = document.querySelector("#b_camera");
+var video_button = document.querySelector("#b_video");
+var video = document.querySelector("#video");
+var logo = document.querySelector("#logo");
+var session = document.querySelector("#session");
+var bug = document.querySelector("#bug");
+var demo = document.querySelector("#b_demo");
+
+
+//let click_button = document.querySelector("#click-photo");
+//let canvas = document.querySelector("#canvas");
+
+
+camera_button.addEventListener('click', async function() {
+    let stream;
+    if(!on_air)
+	 {
+   	  stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+	  logo.style.display="none";
+	  video.style.display="block";
+	  window.localStream = stream;
+	  video.srcObject = stream;
+	  camera_button.innerHTML="Выключить камеру";
+	  camera_button.style.backgroundColor="red";
+	 }
+	 else
+	 {
+	  localStream.getVideoTracks()[0].stop();
+
+	  
+      video.src = '';
+	  video.innerHTML="";
+      window.localStream=undefined;	
+	  video.srcObject=undefined; 
+	  video.style.display="none";
+	  logo.style.display="block";
+	  camera_button.innerHTML="Включить камеру";
+	  camera_button.style.backgroundColor="green";
+	 }
+	 on_air=!on_air;
+});
+
+video_button.addEventListener('click', function() {
+
+    if(!video_on)
+	 {
+	  logo.style.display="none";
+	  video.style.display="block";
+	  video_button.innerHTML="Выключить видео";
+	  video_button.style.backgroundColor="red";
+      <!-- https://www.youtube.com/watch?v=NSe3TFLYcO8&ab_channel=PaulBaker -->	  
+	  video.innerHTML='<source src="movie.mp4" type="video/mp4">';
+	 }
+	 else
+	 {
+	  video.innerHTML=''
+	  video.style.display="none";
+	  logo.style.display="block";
+	  video_button.innerHTML="Включить видео";
+	  video_button.style.backgroundColor="green";
+	 }
+	 video_on=!video_on;
+});
+
+demo.addEventListener('click', function() {
+    demo_on=!demo_on;
+    if(demo_on)
+	 {
+        session_opened=false;	 
+	 	demo.style.backgroundColor="#700";
+	    t0=Date.now();
+	    bug.style.display = "block";
+		t_demo= setInterval(function (){
+		random_brown();
+		}, 1800); 
+     }
+	 else
+	 {
+	  demo.style.backgroundColor="#777";
+	  bug.style.display = "none";
+	  clearInterval(t_demo);
+	 }
+});
+/*camera_button.addEventListener('mousedown', function() {
+	  camera_button.style.boxShadow="5px 5px 3px 5px grey";
+}); 
+camera_button.addEventListener('mouseup', function() {
+	  camera_button.style.boxShadow="7px 7px 3px 10px grey";
+}); 
+*/
+/*
+click_button.addEventListener('click', function() {
+   	canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+   	let image_data_url = canvas.toDataURL('image/jpeg');
+
+   	// data url of the image
+   	console.log(image_data_url);	
+});
+*/
+
+transparent.addEventListener('click', function(event) {
+if(!session_opened)
+{
+ session_opened=true;
+ session.classList.add("active_session");
+ session.disabled=false;
+ session.innerHTML="Завершить текущую серию,<br>результат в Excel";
+ current_session_data= new Array;
+ start_session_time=(demo_on)? t0 : Date.now();
+ start_session_x=(demo_on)? x0 : event.offsetX;
+ start_session_y=(demo_on)? y0 : event.offsetY;
+// console.log("Start: "+start_session_x+","+start_session_y)
+}
+
+let t=(!current_session_data.length)? 0 : Date.now()-start_session_time;
+let d_x=event.offsetX-start_session_x;
+let d_y=event.offsetY-start_session_y;
+let r=Math.sqrt(d_x*d_x +d_y*d_y);
+//console.log("Click: "+(d_x+start_session_x)+","+(d_y+start_session_y)+","+r)
+if(demo_on)
+{
+
+ let click_err;
+ if(!current_session_data.length)
+ {
+  click_err=0;
+ }
+ else
+ {
+  click_err=(d_x+start_session_x-x_r)*(d_x+start_session_x-x_r)+(d_y+start_session_y-y_r)*(d_y+start_session_y-y_r);
+ }
+ if(click_err<= delta*delta)
+ { 
+   bug.style.backgroundColor="green";
+ }
+ else
+ { 
+   bug.style.backgroundColor="red";
+ } 
+//console.log("err=" +Math.sqrt(click_err)) 
+}
+let sqrt_t=Math.sqrt(t);
+let r_sqrt_t=(!current_session_data.length)? 0 : (r/sqrt_t).toLocaleString();
+    r=r.toLocaleString();
+	sqrt_t=sqrt_t.toLocaleString();
+
+current_session_data.push({t: t,  d_x: d_x, d_y: d_y, r: r, sqrt_t: sqrt_t, r_sqrt_t: r_sqrt_t});
+});
+
+transparent.addEventListener('mouseout', function(event) {
+hideTooltip();
+});
+
+transparent.addEventListener('mousemove', function(event) {
+showTooltip(event, "x= " + event.offsetX + ", y= " + event.offsetY);
+});
+
+session.addEventListener('click', function() {
+ session_opened=false;
+ session.classList.remove("active_session");
+ session.disabled=true;
+ session.innerHTML="Кликни на выбранной частице,<br> чтобы начать новую серию";
+ var result="t(msec)" + delimiter + "x" + delimiter + "y" + delimiter + "r" +delimiter + "sqrt(t)" + delimiter + "r/sqrt(t)\n";
+ for(let i=1; i< current_session_data.length; i++)
+ {
+  var cur_point=current_session_data[i].t + delimiter + current_session_data[i].d_x + delimiter +current_session_data[i].d_y;
+      cur_point+= delimiter + current_session_data[i].r + delimiter + current_session_data[i].sqrt_t + delimiter + current_session_data[i].r_sqrt_t  +"\n";
+  result+=cur_point;
+ }
+  download("brownian.csv", result);
+});
+
+function download(filename, text) {
+  var element = document.createElement('a');
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+  element.setAttribute('download', filename);
+  element.style.display = 'none';
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+}
+
+function random_brown()
+{
+ const PI=3.141592653589793;
+ x0=400, y0=300;
+ bug.style.backgroundColor="transparent";
+ let alf;
+ t_r=Date.now()-t0;
+// r_r=0.5*Math.sqrt(t_r)*(1+0.2*(0.5-Math.random())); ///0.9r-1.1r
+ r_r=0.5*Math.sqrt(t_r);
+ alf=PI*(1-2*Math.random());
+ x_r=x0+r_r* Math.cos(alf);
+ y_r=y0+r_r* Math.sin(alf);
+ 
+// console.log(x_r+","+y_r+","+r_r)
+  bug.innerHTML = "🎯";
+  bug.style.left = (x_r - 6) + 'px';
+  bug.style.top = (y_r - 6)  + 'px';
+  bug.style.fontSize = "12px"; 
+}
+
+</script>
+</html>
