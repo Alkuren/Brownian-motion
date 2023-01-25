@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html>
-<!-- ver 2.04, © A. Kurenshvhikov, 2023 -->
+<!-- ver 2.05, © A. Kurenshvhikov, 2023 -->
 <head>
 <title>Броуновское движение</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
+#buttons
+{
+  margin-bottom: 10px;
+}
+
 .button {
   margin: 15px;
   padding: 15px 25px;
@@ -30,7 +35,7 @@
 
 .no_session {
   margin: 15px 15px 15px 30px;
-  padding: 15px 25px;
+  padding: 10px 10px;
   font-size: 14px;
   text-align: center;
   cursor: pointer;
@@ -111,10 +116,12 @@
 
 </head>
 <body>
+<div id="buttons"> 
 <button id="b_camera" class="button">Включить камеру</button>
 <button id="b_video" class="button">Включить видео</button>
 <button id="b_demo" class="demo">Демо</button>
 <button disabled id="session" class="no_session">Кликни на выбранной частице,<br> чтобы начать новую серию</button>
+</div>
 
 <div id= "transparent">
   <div id="splash"><img id="logo" src="sirin.jpg"></div>
