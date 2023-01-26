@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<!-- ver 2.05, © A. Kurenshvhikov, 2023 -->
+<!-- ver 2.06, © A. Kurenshvhikov, 2023 -->
 <head>
 <title>Броуновское движение</title>
 <meta charset="utf-8">
@@ -355,8 +355,13 @@ hideTooltip();
 });
 
 transparent.addEventListener('mousemove', function(event) {
-    event.preventDefault();
-showTooltip(event, "x= " + event.offsetX + ", y= " + event.offsetY);
+  let x_transp, y_transp;
+  x_shift=Math.round(transparent.getBoundingClientRect().left + 1);
+  y_shift=Math.round(transparent.getBoundingClientRect().top + 1);  
+  x_transp=event.pageX - x_shift;
+  y_transp=event.pageY - y_shift;
+  showTooltip(event, "x= " + x_transp + ", y= " + y_transp);
+
 });
 
 bug.addEventListener('mousemove', function(event) {
